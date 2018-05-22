@@ -1,0 +1,228 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+	<title>Ethereal by HTML5 UP</title>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+	<link rel="stylesheet" href="assets/css/main.css" />
+	<noscript>
+		<link rel="stylesheet" href="assets/css/noscript.css" />
+	</noscript>
+</head>
+
+<body>
+	<!-- Page Wrapper -->
+	<div id="page-wrapper">
+		<!-- Wrapper -->
+		<div id="wrapper">
+			<!-- Panel -->
+			<section class="panel color1">
+				<div class="intro joined">
+					<blockquote id="toast"></blockquote>
+					<h2 class="major">Welcome BeautyNote</h2>
+					<p>基于NAS区块链的个人笔记</p>
+					<p></p>
+					<p></p>
+					<p></p>
+					<p id="address"></p>
+				</div>
+				<div class="inner">
+					<ul class="grid-icons three connected">
+						<li>
+							<span class="icon fa-diamond">
+								<span class="label">Lorem</span>
+							</span>
+						</li>
+						<li>
+							<span class="icon fa-camera-retro">
+								<span class="label">Ipsum</span>
+							</span>
+						</li>
+						<li>
+							<span class="icon fa-cog">
+								<span class="label">Dolor</span>
+							</span>
+						</li>
+						<li>
+							<span class="icon fa-paper-plane">
+								<span class="label">Sit</span>
+							</span>
+						</li>
+						<li>
+							<span class="icon fa-bar-chart">
+								<span class="label">Amet</span>
+							</span>
+						</li>
+						<li>
+							<span class="icon fa-code">
+								<span class="label">Nullam</span>
+							</span>
+						</li>
+					</ul>
+				</div>
+			</section>
+			<!-- Panel -->
+			<section class="panel" id="intor">
+				<div class="intro color2">
+					<h2 class="major">使用说明</h2>
+					<p>BeautyNote是基于NAS主链的记事本DAPP，会根据调用合约的地址来确定用户的唯一性，保证数据的安全性。推荐您使用Chrome浏览器并安装
+						<a href="https://github.com/ChengOrangeJu/WebExtensionWallet">WebExtensionWallet</a>插件</p>
+				</div>
+			</section>
+			<!-- Panel -->
+			<section class="panel color4-alt">
+				<div class="inner columns divided">
+					<div class="span-3-25">
+						<form method="post" action="#">
+							<div class="field">
+								<label for="message">Note</label>
+								<textarea name="message" id="message" rows="4" style="height: 300px"></textarea>
+							</div>
+							<ul class="actions">
+								<li>
+									<input type="button" value="Save Note" class="button special" id="saveButton" />
+								</li>
+							</ul>
+						</form>
+					</div>
+					<div class="span-1-5">
+						<ul class="contact-icons color1">
+							<li class="icon fa-twitter">
+								<a href="#">@untitled-tld</a>
+							</li>
+							<li class="icon fa-facebook">
+								<a href="#">facebook.com/untitled</a>
+							</li>
+							<li class="icon fa-snapchat-ghost">
+								<a href="#">@untitled-tld</a>
+							</li>
+							<li class="icon fa-instagram">
+								<a href="#">@untitled-tld</a>
+							</li>
+							<li class="icon fa-medium">
+								<a href="#">medium.com/untitled</a>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</section>
+			<!-- Copyright -->
+		</div>
+	</div>
+
+	<!-- Scripts -->
+	<script src="assets/js/jquery.min.js"></script>
+	<script src="assets/js/skel.min.js"></script>
+	<script src="assets/js/main.js"></script>
+	<script src="lib/jquery-3.3.1.min.js"></script>
+	<script src="lib/nebPay.js"></script>
+	<script src="lib/bootstrap-4.0.0-dist/js/bootstrap.min.js"></script>
+	<script src="lib/nebulas.js"></script>
+	<script>
+		"use strict";
+		var nebulas = require("nebulas");
+		var NebPay = require("nebpay");
+		var nebPay = new NebPay();
+		var dappAddress = "n1rQUnbLnV7Ehez8NyzvGATn8yXaQRGDBV8";
+		var neb = new Neb();
+		var address = "";
+		neb.setRequest(new nebulas.HttpRequest("https://mainnet.nebulas.io"));
+
+		if (typeof (webExtensionWallet) === "undefined") {
+			$("#toast").html("您未安装WebExtensionWallet，为了不影响您的使用，请安装插件");
+		} else {
+			$("#toast").html("您已安装WebExtensionWallet");
+		}
+
+		window.addEventListener('message', function (e) {
+			if (!!e.data.data.account) {
+				address = e.data.data.account;
+				$("#address").html("您当前地址为:<br/>" + e.data.data.account);
+				getAllNote();
+			}
+		});
+
+		$(document).ready(function () {
+			window.postMessage({
+				"target": "contentscript",
+				"data": {
+				},
+				"method": "getAccount",
+			}, "*");
+		});
+
+		$("#saveButton").click(function () {
+			var content = $("#message").val();
+			saveNote(content);
+		});
+
+		function saveNote(content) {
+			var to = dappAddress;
+			var value = 0;
+			var callFunction = "saveNote";
+			var myDate = new Date().getTime() / 1000;
+
+			var callArgs = "[\"" + content + "\",\"" + myDate.toString() + "\"]"; //in the form of ["args"]
+			nebPay.call(to, value, callFunction, callArgs, {
+				qrcode: {
+					showQRCode: true
+				},
+				goods: {
+					name: "test",
+					desc: "test goods"
+				},
+				//callback: cbCallDapp
+				listener: cbCallDapp
+			});
+		}
+
+		function cbCallDapp(resp) {
+			console.log("callback resp: " + JSON.stringify(resp))
+			alert("call Dapp result:\n" + JSON.stringify(resp));
+		}
+
+
+		function getAllNote() {
+			var from = address;
+			var value = "0";
+			var nonce = "0"
+			var gas_price = "1000000"
+			var gas_limit = "2000000"
+			var callFunction = "getNote";
+			var callArgs = "[\"\"]";
+			var contract = {
+				"function": callFunction,
+				"args": callArgs
+			}
+			neb.api.call(from, dappAddress, value, nonce, gas_price, gas_limit, contract).then(function (resp) {
+				var notes = resp.result;
+				var totalNotes = notes.split("|||");
+				totalNotes.forEach(element => {
+					addNote(element);
+				});
+			});
+		}
+
+		function getNoteCallDapp(resp) {
+			console.log("callback resp: " + JSON.stringify(resp))
+			// document.getElementById("callResult").innerHTML = "call Dapp result:\n" + JSON.stringify(resp)
+			alert(JSON.stringify(resp));
+		}
+
+		function addNote(note) {
+			if (note.indexOf("null") != -1 ) return;
+			var noteInfo = note.split("|-|");
+			var timestamp = parseInt(noteInfo[1]);
+			var newDate = new Date();
+			newDate.setTime(timestamp * 1000);
+			var time = newDate.toDateString();
+			var noteContent = noteInfo[0];
+			var content = "<section class=\"panel\"><div class=\"intro color2\"><h2 class=\"major\">" + time + "</h2><p>" + noteContent + "</p></section>";
+			$("#intor").after(content);
+		}
+
+	</script>
+</body>
+
+</html>
